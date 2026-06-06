@@ -780,7 +780,7 @@ def serve_dashboard():
 
 if __name__ == "__main__":
     # Start FastAPI Server cleanly
-    uvicorn.run(app, host="0.0.0.0", port=7865)
+    uvicorn.run(app, host="0.0.0.0", port=7860)
 
 
 
