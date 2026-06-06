@@ -1,0 +1,322 @@
+"""
+Execution Agent - The Workflow Integrator
+Connects to external APIs (GitHub, Slack, Azure DevOps) to publish action items.
+
+Responsibilities:
+- Create issues on mock GitHub API
+- Trigger Slack webhook notifications
+- Post tasks to Azure DevOps mock endpoints
+- Track execution status and confirmations
+"""
+
+import json
+import requests
+from typing import Dict, Any, List, Optional
+from datetime import datetime
+from enum import Enum
+
+class ServiceType(Enum):
+    """Supported external service types."""
+    GITHUB = "github"
+    SLACK = "slack"
+    AZURE_DEVOPS = "azure_devops"
+
+
+class ExecutionAgent:
+    """
+    Execution Agent - External API Integration Handler
+    
+    Manages connections to external services and publishes action items
+    from the Productivity Agent. Uses mock implementations when real
+    services are unavailable.
+    """
+    
+    def __init__(self):
+        """Initialize Execution Agent with service configurations."""
+        self.github_api_base = "https://api.github.com/repos/mock-org/mock-repo"
+        self.slack_webhook_url = "https://hooks.slack.com/services/mock"
+        self.azure_devops_base = "https://dev.azure.com/mock-org/mock-project"
+        
+        self.issues_created = 0
+        self.slack_alerts_sent = 0
+        self.api_errors = 0
+    
+    def execute_action_item(self, action_item: Dict[str, Any], target_service: str = "github") -> Dict[str, Any]:
+        """
+        Execute (publish) an action item to an external service.
+        
+        Args:
+            action_item: Action item from Productivity Agent with task, assignee, priority.
+            target_service: Target service ("github", "slack", "azure_devops").
+            
+        Returns:
+            Result dictionary with status and execution details.
+        """
+        try:
+            if target_service.lower() == "github":
+                return self._create_github_issue(action_item)
+            elif target_service.lower() == "slack":
+                return self._send_slack_alert(action_item)
+            elif target_service.lower() == "azure_devops":
+                return self._create_azure_workitem(action_item)
+            else:
+                return {
+                    "status": "failed",
+                    "error": f"Unknown service: {target_service}",
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+        except Exception as e:
+            self.api_errors += 1
+            return {
+                "status": "error",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+    
+    def _create_github_issue(self, action_item: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Create a GitHub issue from an action item.
+        
+        Args:
+            action_item: Action item dictionary.
+            
+        Returns:
+            Result with issue creation status and details.
+        """
+        # Mock implementation - in production, use actual GitHub API
+        try:
+            issue_payload = {
+                "title": f"[{action_item.get('priority', 'medium').upper()}] {action_item.get('task', 'Untitled')}",
+                "body": self._format_github_issue_body(action_item),
+                "labels": [action_item.get("action_type", "task"), action_item.get("priority", "medium")],
+                "assignee": action_item.get("assignee", "").lower() if action_item.get("assignee") != "Unassigned" else None,
+            }
+            
+            # Mock POST (simulate successful creation)
+            self.issues_created += 1
+            
+            return {
+                "status": "success",
+                "service": "github",
+                "action": "issue_created",
+                "issue_number": 1000 + self.issues_created,
+                "issue_url": f"{self.github_api_base}/issues/{1000 + self.issues_created}",
+                "payload": issue_payload,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        except Exception as e:
+            self.api_errors += 1
+            return {
+                "status": "failed",
+                "service": "github",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+    
+    def _format_github_issue_body(self, action_item: Dict[str, Any]) -> str:
+        """Format action item as GitHub issue body."""
+        body = f"""
+## Task Description
+{action_item.get('task', 'No description')}
+
+## Metadata
+- **Assignee:** {action_item.get('assignee', 'Unassigned')}
+- **Priority:** {action_item.get('priority', 'medium').upper()}
+- **Type:** {action_item.get('action_type', 'general')}
+- **Status:** {action_item.get('status', 'pending')}
+- **Created:** {action_item.get('created_at', datetime.utcnow().isoformat())}
+
+## Action Items
+- [ ] Review requirements
+- [ ] Implement solution
+- [ ] Test thoroughly
+- [ ] Deploy to production
+
+---
+*Auto-generated by SmartRoom Execution Agent*
+"""
+        return body
+    
+    def _send_slack_alert(self, action_item: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Send a Slack webhook notification about an action item.
+        
+        Args:
+            action_item: Action item dictionary.
+            
+        Returns:
+            Result with alert status and delivery details.
+        """
+        try:
+            # Format Slack message
+            color_map = {
+                "high": "#FF0000",
+                "medium": "#FFA500",
+                "low": "#00AA00"
+            }
+            
+            slack_payload = {
+                "text": "SmartRoom Action Item Notification",
+                "attachments": [
+                    {
+                        "color": color_map.get(action_item.get("priority", "medium"), "#0099FF"),
+                        "title": f"{action_item.get('priority', 'Medium').capitalize()} Priority: {action_item.get('task', 'Untitled')}",
+                        "fields": [
+                            {
+                                "title": "Assignee",
+                                "value": action_item.get("assignee", "Unassigned"),
+                                "short": True
+                            },
+                            {
+                                "title": "Type",
+                                "value": action_item.get("action_type", "general"),
+                                "short": True
+                            },
+                            {
+                                "title": "Status",
+                                "value": action_item.get("status", "pending"),
+                                "short": True
+                            },
+                            {
+                                "title": "Created",
+                                "value": action_item.get("created_at", datetime.utcnow().isoformat()),
+                                "short": True
+                            },
+                        ],
+                        "footer": "SmartRoom Execution Agent",
+                        "ts": int(datetime.utcnow().timestamp())
+                    }
+                ]
+            }
+            
+            # Mock Slack webhook POST
+            self.slack_alerts_sent += 1
+            
+            return {
+                "status": "success",
+                "service": "slack",
+                "action": "alert_sent",
+                "message_ts": datetime.utcnow().isoformat(),
+                "payload": slack_payload,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        except Exception as e:
+            self.api_errors += 1
+            return {
+                "status": "failed",
+                "service": "slack",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+    
+    def _create_azure_workitem(self, action_item: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Create an Azure DevOps work item from an action item.
+        
+        Args:
+            action_item: Action item dictionary.
+            
+        Returns:
+            Result with work item creation status.
+        """
+        try:
+            work_item_type = self._map_action_type_to_workitem(action_item.get("action_type", "general"))
+            
+            work_item_payload = {
+                "id": 10000 + self.issues_created,
+                "type": work_item_type,
+                "title": action_item.get("task", "Untitled"),
+                "assignee": action_item.get("assignee", "Unassigned"),
+                "priority": self._map_priority_to_azure(action_item.get("priority", "medium")),
+                "state": "New",
+                "description": action_item.get("task", ""),
+                "tags": [action_item.get("action_type", "general"), action_item.get("priority", "medium")],
+            }
+            
+            self.issues_created += 1
+            
+            return {
+                "status": "success",
+                "service": "azure_devops",
+                "action": "workitem_created",
+                "workitem_id": work_item_payload["id"],
+                "workitem_type": work_item_type,
+                "payload": work_item_payload,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        except Exception as e:
+            self.api_errors += 1
+            return {
+                "status": "failed",
+                "service": "azure_devops",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+    
+    @staticmethod
+    def _map_action_type_to_workitem(action_type: str) -> str:
+        """Map action type to Azure DevOps work item type."""
+        mapping = {
+            "create": "Feature",
+            "fix": "Bug",
+            "review": "Task",
+            "test": "Task",
+            "deploy": "Release",
+            "document": "Task",
+            "assign": "Task",
+        }
+        return mapping.get(action_type, "Task")
+    
+    @staticmethod
+    def _map_priority_to_azure(priority: str) -> int:
+        """Map priority to Azure DevOps priority scale (1=highest, 4=lowest)."""
+        mapping = {
+            "high": 1,
+            "medium": 2,
+            "low": 3,
+        }
+        return mapping.get(priority, 2)
+    
+    def batch_execute(self, action_items: List[Dict[str, Any]], service: str = "github") -> List[Dict[str, Any]]:
+        """
+        Execute multiple action items to specified service.
+        
+        Args:
+            action_items: List of action item dictionaries.
+            service: Target service for all items.
+            
+        Returns:
+            List of execution results.
+        """
+        return [self.execute_action_item(item, service) for item in action_items]
+    
+    def multi_service_execute(self, action_items: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Execute action items to multiple services simultaneously.
+        
+        Args:
+            action_items: List of action items.
+            
+        Returns:
+            Dictionary with results grouped by service.
+        """
+        return {
+            "github": self.batch_execute(action_items, "github"),
+            "slack": self.batch_execute(action_items, "slack"),
+            "azure_devops": self.batch_execute(action_items, "azure_devops"),
+        }
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Return agent statistics."""
+        return {
+            "agent_type": "Execution",
+            "issues_created": self.issues_created,
+            "slack_alerts_sent": self.slack_alerts_sent,
+            "api_errors": self.api_errors,
+            "success_rate": (
+                (self.issues_created + self.slack_alerts_sent) / 
+                (self.issues_created + self.slack_alerts_sent + self.api_errors)
+                if (self.issues_created + self.slack_alerts_sent + self.api_errors) > 0
+                else 0
+            ),
+        }

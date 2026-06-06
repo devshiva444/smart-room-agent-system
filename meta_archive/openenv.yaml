@@ -1,0 +1,214 @@
+id: smart-room-automation
+name: "SmartRoomAutomation"
+version: 2.0.0
+description: "Hackathon-ready adaptive smart room with LLM planner, action supervisor, and physics simulation"
+
+entrypoint: server.app:main
+
+# Environment configuration
+environment:
+  name: SmartRoomEnvironment
+  class_path: environment:SmartRoomEnvironment
+  
+  # Action space
+  action_space:
+    type: discrete
+    num_actions: 9
+    action_descriptions:
+      0: "Do nothing - maintain current state"
+      1: "Turn light ON"
+      2: "Turn light OFF"
+      3: "Set fan to speed 1 (low)"
+      4: "Set fan to speed 2 (medium)"
+      5: "Set fan to speed 3 (high)"
+      6: "Turn fan OFF"
+      7: "Turn AC ON"
+      8: "Turn AC OFF"
+  
+  # Observation space
+  observation_space:
+    type: dict
+    properties:
+      temperature: 
+        type: float
+        description: "Room temperature in Celsius"
+      light_on: 
+        type: boolean
+        description: "Is light on?"
+      fan_speed: 
+        type: integer
+        minimum: 0
+        maximum: 3
+        description: "Fan speed level (0-3)"
+      ac_on: 
+        type: boolean
+        description: "Is AC on?"
+      occupancy: 
+        type: boolean
+        description: "Is someone in room?"
+      energy_used: 
+        type: float
+        description: "Energy consumed this step"
+      reward: 
+        type: float
+        description: "Step reward"
+      done: 
+        type: boolean
+        description: "Episode finished?"
+      time_of_day:
+        type: string
+        enum: ["day", "night"]
+      sleep_mode:
+        type: boolean
+        description: "Is sleep mode active (night + occupied + dark)?"
+      action_taken:
+        type: integer
+        description: "Action that was executed"
+
+# Multi-agent layers
+agents:
+  planner:
+    name: "LLM Planner"
+    description: "Brain layer - uses LLM to decide actions"
+    type: "llm"
+    model: "gpt-3.5-turbo"
+    fallback: "rule_based"
+  
+  supervisor:
+    name: "Action Supervisor"
+    description: "Safety layer - validates and overrides unsafe actions"
+    type: "validator"
+    safety_rules: "hard_constraints"
+  
+  executor:
+    name: "Environment"
+    description: "Physics layer - simulates room dynamics and computes rewards"
+    type: "physics_simulator"
+
+# Reward system
+reward:
+  type: "multi_component"
+  components:
+    comfort: 
+      weight: 1.0
+      description: "Temperature in comfort range (22-26°C)"
+    energy:
+      weight: 0.5
+      description: "Energy usage penalty"
+    safety:
+      weight: 1.0
+      description: "Safety violations penalty"
+    stability:
+      weight: 0.3
+      description: "Smooth operation bonus"
+    anti_cheat:
+      weight: 0.2
+      description: "Action spamming penalty"
+
+# Training configuration
+training:
+  algorithm: "DQN"
+  episodes: 100
+  steps_per_episode: 100
+  batch_size: 32
+  learning_rate: 0.001
+  gamma: 0.99
+  epsilon_start: 1.0
+  epsilon_decay: 0.995
+  epsilon_min: 0.01
+  update_target_every: 10
+
+# Evaluation modes
+evaluation:
+  tasks:
+    - name: "comfort"
+      description: "Maintain room at 24°C with low energy"
+    - name: "energy_efficient"
+      description: "Minimize energy use while keeping room habitable"
+    - name: "safety_first"
+      description: "Respect all safety constraints and sleep mode"
+
+# API endpoints
+endpoints:
+  reset: 
+    path: /reset
+    method: POST
+    description: "Reset environment to initial state"
+  
+  step:
+    path: /step
+    method: POST
+    description: "Execute one environment step"
+    input_schema:
+      type: object
+      properties:
+        action:
+          type: integer
+          minimum: 0
+          maximum: 8
+  
+  state:
+    path: /state
+    method: GET
+    description: "Get current environment state"
+  
+  inference:
+    path: /inference
+    method: POST
+    description: "Run inference loop"
+    input_schema:
+      type: object
+      properties:
+        model:
+          type: string
+          enum: ["llm", "dqn"]
+        episodes:
+          type: integer
+  
+  train:
+    path: /train
+    method: POST
+    description: "Train agent"
+    input_schema:
+      type: object
+      properties:
+        episodes:
+          type: integer
+        save_model:
+          type: boolean
+
+# Deployment hints
+deployment:
+  frameworks:
+    - "FastAPI"
+    - "Streamlit"
+  hardware:
+    - "CPU"
+    - "GPU (CUDA)"
+  memory_requirements: "512MB min, 2GB recommended"
+  inference_time: "~50ms per step"
+
+# Data persistence
+persistence:
+  database: "SQLite"
+  location: "./data/smartroom.db"
+  logs_location: "./logs/"
+  model_checkpoint: "smart_room_ai_final.pth"
+
+# Compatibility
+compatibility:
+  openenv_version: ">=0.2.0"
+  python_version: ">=3.8"
+  framework: "PyTorch"
+  observation_schema:
+    temperature: { type: float }
+    light_on: { type: boolean }
+    fan_speed: { type: integer }
+    ac_on: { type: boolean }
+    occupancy: { type: boolean }
+    energy_used: { type: float }
+    reward: { type: float }
+    done: { type: boolean }
+    time_of_day: { type: string }
+    sleep_mode: { type: boolean }
+    override_active: { type: boolean }
