@@ -244,6 +244,11 @@ The Security Agent integrates seamlessly with:
 
 ---
 
+
+## Development Tools Disclosure:
+"During the development phase, GitHub Copilot, Cline, and Gemini were utilized as coding assistants to accelerate scaffolding, UI implementation, and code optimization."
+
+
 ## 📝 License
 
 This project was developed for the **Meta x Scaler OpenEnv Hackathon 2026**.
