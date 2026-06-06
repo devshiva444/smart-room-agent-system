@@ -1,3 +1,13 @@
+---
+title: SmartRoom-Swarm-OS
+emoji: 🤖
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Security Agent - The Sentinel 🛡️
 
 A robust, multi-layered security validation system designed to protect autonomous agent swarms from adversarial prompt injections, malicious inputs, and unauthorized system overrides.
