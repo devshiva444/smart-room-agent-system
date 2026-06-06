@@ -8,7 +8,7 @@ app_port: 7860
 pinned: false
 ---
 
-# Security Agent - The Sentinel 🛡️
+# Security Agent - The Sentinel 🛡️ [![Live Demo](https://img.shields.io/badge/Live-Demo-green)](https://huggingface.co/spaces/devshiv444/SmartRoom-Swarm-OS)
 
 A robust, multi-layered security validation system designed to protect autonomous agent swarms from adversarial prompt injections, malicious inputs, and unauthorized system overrides.
 
