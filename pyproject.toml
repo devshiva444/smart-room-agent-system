@@ -3,22 +3,22 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "smart-room-automation-openenv"
-version = "0.1.0"
-description = "Smart Room Automation Environment for OpenEnv"
+name = "SmartRoom-Swarm-OS"
+version = "1.0.0"
+description = "Autonomous Workspace OS with Multi-Agent Swarm and Security Sentinel"
 readme = "README.md"
 requires-python = ">=3.10"
+
 dependencies = [
-    "fastapi==0.135.2",
-    "uvicorn==0.42.0",
-    "pydantic==2.12.5",
-    "openai==2.30.0",
-    "requests==2.33.0",
-    "openenv-core==0.2.3",
-    "python-dotenv==1.2.2",
-    "torch==2.11.0",
+    "fastapi==0.110.0",
+    "uvicorn==0.27.0",
+    "pydantic==2.6.0",
+    "python-dotenv>=1.1.0",
+    "torch",
     "numpy==1.26.4",
-    "Jinja2==3.1.6"
+    "requests==2.31.0",
+    "openai==1.10.0",
+    "Jinja2==3.1.2"
 ]
 
 [project.scripts]
